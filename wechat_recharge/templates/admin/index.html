@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代充管理后台</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+:root{--bg:#0d0f14;--bg2:#141720;--bg3:#1c2030;--border:#252a3a;--accent:#4f8ef7;--accent2:#38d9a9;--warn:#f4a261;--danger:#e63946;--text:#e2e8f0;--text2:#8892a4;--text3:#4a5568;--mono:'DM Mono',monospace;--sans:'Noto Sans SC',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
+#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 60% 40%,#1a2340 0%,#0d0f14 70%)}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:8px}
+.login-box p{color:var(--text2);margin-bottom:32px;font-size:13px}
+.field{margin-bottom:16px}
+.field label{display:block;color:var(--text2);font-size:12px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.field input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#6b9ef8}
+.btn-success{background:var(--accent2);color:#0d1f17}.btn-success:hover{filter:brightness(1.1)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
+.btn-full{width:100%}.btn-sm{padding:5px 12px;font-size:12px}
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.sidebar-logo .logo-title{font-size:16px;font-weight:700}
+.sidebar-logo .logo-sub{color:var(--text2);font-size:11px;margin-top:3px;font-family:var(--mono)}
+.nav{flex:1;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text2);cursor:pointer;transition:all .15s;font-size:13px;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(79,142,247,.08)}
+.nav-icon{width:16px;height:16px;flex-shrink:0;font-style:normal}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.main{margin-left:220px;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar h2{font-size:16px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.content{padding:28px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.stat-card .label{color:var(--text2);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.stat-card .value{font-size:28px;font-weight:700;margin:8px 0 4px;font-family:var(--mono)}
+.stat-card .sub{color:var(--text2);font-size:12px}
+.stat-card.accent .value{color:var(--accent)}.stat-card.green .value{color:var(--accent2)}.stat-card.warn .value{color:var(--warn)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:14px;font-weight:600}
+.filters{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filters select,.filters input[type=text]{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:13px;outline:none;font-family:var(--sans)}
+.filters select:focus,.filters input:focus{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:1px solid var(--border)}
+td{padding:12px 14px;border-bottom:1px solid rgba(37,42,58,.5);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.mono{font-family:var(--mono);font-size:12px}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.badge-blue{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge-green{background:rgba(56,217,169,.15);color:var(--accent2)}
+.badge-yellow{background:rgba(244,162,97,.15);color:var(--warn)}
+.badge-red{background:rgba(230,57,70,.15);color:var(--danger)}
+.badge-gray{background:rgba(138,146,164,.1);color:var(--text2)}
+.pagination{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);font-size:13px;color:var(--text2)}
+.pagination-btns{display:flex;gap:6px}
+.page-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;font-family:var(--sans)}
+.page-btn:hover{color:var(--text)}.page-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:520px;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;margin-bottom:20px;font-weight:700}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;color:var(--text2);font-size:12px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical}
+.detail-row{display:flex;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-row .dk{color:var(--text2);width:80px;flex-shrink:0}
+.detail-row .dv{color:var(--text);word-break:break-all}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 20px;color:var(--text);font-size:13px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.empty-row td{color:var(--text2);text-align:center;padding:32px!important}
+.color-dot{width:14px;height:14px;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:5px}
+.icon-preview{font-size:26px;width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
+.req{color:var(--danger)}
+.td-actions{display:flex;gap:6px}
+</style>
+</head>
+<body>
+
+<div id="login-page">
+  <div class="login-box">
+    <h1>🎮 代充管理后台</h1>
+    <p>Admin Panel v2.0</p>
+    <div class="field"><label>用户名</label><input type="text" id="login-user" placeholder="" autocomplete="username"></div>
+    <div class="field"><label>密码</label><input type="password" id="login-pass" placeholder="" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">登录</button>
+    <div id="login-err" style="color:var(--danger);font-size:12px;margin-top:10px;display:none"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-title">🎮 代充后台</div>
+      <div class="logo-sub">Admin Panel v2.0</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPage('dashboard')"><i class="nav-icon">📊</i>数据概览</div>
+      <div class="nav-item" onclick="showPage('orders')"><i class="nav-icon">📋</i>订单管理</div>
+      <div class="nav-item" onclick="showPage('products')"><i class="nav-icon">💰</i>商品管理</div>
+      <div class="nav-item" onclick="showPage('games')"><i class="nav-icon">🎮</i>游戏管理</div>
+      <div class="nav-item" onclick="showPage('categories')"><i class="nav-icon">📁</i>分类管理</div>
+      <div class="nav-item" onclick="showPage('servers')"><i class="nav-icon">🖥️</i>服务器&种类</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost btn-full btn-sm" onclick="doLogout()">退出登录</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- 概览 -->
+    <div id="page-dashboard">
+      <div class="topbar"><h2>数据概览</h2><div class="topbar-right"><button class="btn btn-ghost btn-sm" onclick="loadStats();loadPending()">🔄 刷新</button></div></div>
+      <div class="content">
+        <div class="stats-grid">
+          <div class="stat-card accent"><div class="label">今日订单</div><div class="value" id="s-today-cnt">-</div><div class="sub">已支付</div></div>
+          <div class="stat-card green"><div class="label">今日收款</div><div class="value" id="s-today-amt">-</div><div class="sub">元</div></div>
+          <div class="stat-card warn"><div class="label">待处理</div><div class="value" id="s-pending">-</div><div class="sub">需尽快充值</div></div>
+          <div class="stat-card"><div class="label">累计收款</div><div class="value" id="s-total-amt">-</div><div class="sub">总计（元）</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>⚡ 待处理订单</h3><button class="btn btn-ghost btn-sm" onclick="showPage('orders')">全部订单</button></div>
+          <table><thead><tr><th>时间</th><th>订单号</th><th>商品</th><th>游戏账号</th><th>区服/角色</th><th>金额</th><th>操作</th></tr></thead>
+          <tbody id="pending-tbody"><tr class="empty-row"><td colspan="7">加载中...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 订单 -->
+    <div id="page-orders" style="display:none">
+      <div class="topbar"><h2>订单管理</h2><div class="topbar-right"><button class="btn btn-ghost btn-sm" onclick="loadOrders()">🔄 刷新</button></div></div>
+      <div class="content">
+        <div class="card">
+          <div class="filters">
+            <select id="f-status" onchange="loadOrders()"><option value="">全部状态</option><option value="1">处理中</option><option value="0">待处理</option><option value="2">已完成</option><option value="3">已退款</option></select>
+            <select id="f-pay" onchange="loadOrders()"><option value="">全部支付</option><option value="1">已支付</option><option value="0">未支付</option></select>
+            <input type="text" id="f-kw" placeholder="搜索订单号/账号/商品..." style="width:220px" onkeydown="if(event.key==='Enter')loadOrders()">
+            <button class="btn btn-primary btn-sm" onclick="loadOrders()">搜索</button>
+          </div>
+          <table><thead><tr><th>时间</th><th>订单号</th><th>商品</th><th>游戏账号</th><th>金额</th><th>支付</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="orders-tbody"><tr class="empty-row"><td colspan="8">加载中...</td></tr></tbody></table>
+          <div class="pagination"><div id="orders-total">共 0 条</div><div class="pagination-btns" id="orders-pages"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品 -->
+    <div id="page-products" style="display:none">
+      <div class="topbar"><h2>商品管理</h2><div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openProductModal(null)">+ 添加商品</button></div></div>
+      <div class="content">
+        <div class="card">
+          <div class="filters">
+            <select id="fp-game" onchange="loadProducts()"><option value="">全部游戏</option></select>
+            <input type="text" id="fp-kw" placeholder="搜索商品名称..." style="width:200px" onkeydown="if(event.key==='Enter')loadProducts()">
+            <button class="btn btn-primary btn-sm" onclick="loadProducts()">搜索</button>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fp-kw').value='';document.getElementById('fp-game').value='';loadProducts()">重置</button>
+          </div>
+          <table><thead><tr><th>ID</th><th>游戏</th><th>商品名</th><th>售价</th><th>成本</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="products-tbody"><tr class="empty-row"><td colspan="8">加载中...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 游戏 -->
+    <div id="page-games" style="display:none">
+      <div class="topbar"><h2>游戏管理</h2><div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openGameModal(null)">+ 添加游戏</button></div></div>
+      <div class="content">
+        <div class="card">
+          <table><thead><tr><th>ID</th><th>图标</th><th>游戏名</th><th>所属分类</th><th>简介</th><th>封面色</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="games-tbody"><tr class="empty-row"><td colspan="9">加载中...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分类 -->
+    <div id="page-categories" style="display:none">
+      <div class="topbar"><h2>分类管理</h2><div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openCatModal(null)">+ 添加分类</button></div></div>
+      <div class="content">
+        <div class="card">
+          <table><thead><tr><th>ID</th><th>图标</th><th>分类名</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="cats-tbody"><tr class="empty-row"><td colspan="6">加载中...</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 服务器&种类管理页 -->
+    <div id="page-servers" style="display:none">
+      <div class="topbar"><h2>服务器 &amp; 商品种类管理</h2></div>
+      <div class="content">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-header"><h3>🎮 选择游戏</h3></div>
+            <div style="padding:12px">
+              <select id="sv-game-sel" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" onchange="onSelectGame(this.value)">
+                <option value="">-- 请选择游戏 --</option>
+              </select>
+            </div>
+            <table><thead><tr><th>名称</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="sv-list"><tr class="empty-row"><td colspan="4">请先选择游戏</td></tr></tbody></table>
+            <div style="padding:12px;border-top:1px solid var(--border)">
+              <button class="btn btn-primary btn-sm btn-full" onclick="openServerModal(null)">+ 添加服务器</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>📦 商品种类</h3><span id="sv-type-title" style="color:var(--text2);font-size:12px"></span></div>
+            <table><thead><tr><th>名称</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="type-list"><tr class="empty-row"><td colspan="4">请先选择服务器</td></tr></tbody></table>
+            <div style="padding:12px;border-top:1px solid var(--border)">
+              <button class="btn btn-primary btn-sm btn-full" id="btn-add-type" onclick="openTypeModal(null)">+ 添加种类</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>💰 该种类商品</h3><span id="sv-prod-title" style="color:var(--text2);font-size:12px"></span></div>
+            <table><thead><tr><th>商品名</th><th>价格</th><th>操作</th></tr></thead>
+            <tbody id="sv-prod-list"><tr class="empty-row"><td colspan="3">请先选择种类</td></tr></tbody></table>
+            <div style="padding:12px;border-top:1px solid var(--border)">
+              <button class="btn btn-primary btn-sm btn-full" id="btn-add-sv-prod" onclick="openSvProductModal()">+ 添加商品</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 订单弹窗 -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal">
+    <h3>📋 订单详情</h3>
+    <div id="order-detail"></div>
+    <div style="margin-top:16px">
+      <label style="color:var(--text2);font-size:12px;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">管理员备注</label>
+      <textarea id="order-remark" rows="3" placeholder="填写备注（可选）" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('order-modal')">关闭</button>
+      <button class="btn btn-danger btn-sm" id="btn-refund" onclick="doRefund()">标记退款</button>
+      <button class="btn btn-success" id="btn-complete" onclick="doComplete()">✅ 标记完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 商品弹窗 -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <h3 id="pm-title">添加商品</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>关联游戏 <span class="req">*</span></label>
+        <select id="p-game-id" onchange="onProductGameChange(this.value)"><option value="">-- 请选择游戏 --</option></select>
+      </div>
+      <div class="form-group">
+        <label>服务器类型</label>
+        <select id="p-server-id" onchange="onProductServerChange(this.value)"><option value="">-- 先选游戏 --</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>商品种类</label>
+        <select id="p-type-id"><option value="">-- 先选服务器 --</option></select>
+      </div>
+      <div class="form-group">
+        <label>商品名称 <span class="req">*</span></label>
+        <input type="text" id="p-name" placeholder="如：创世神晶×60">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>售价（元）<span class="req">*</span></label>
+        <input type="number" id="p-price" step="0.01" placeholder="6.00">
+      </div>
+      <div class="form-group">
+        <label>成本（元）</label>
+        <input type="number" id="p-cost" step="0.01" placeholder="5.00">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>排序（小的靠前）</label>
+        <input type="number" id="p-sort" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>状态</label>
+        <select id="p-active"><option value="1">上架</option><option value="0">下架</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>商品描述</label>
+      <input type="text" id="p-desc" placeholder="如：请提供游戏UID，充值后发送至邮箱">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('product-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 服务器弹窗 -->
+<div class="modal-overlay" id="server-modal">
+  <div class="modal" style="width:400px">
+    <h3 id="sv-modal-title">添加服务器类型</h3>
+    <div class="form-group">
+      <label>服务器名称 <span class="req">*</span></label>
+      <input type="text" id="sv-name" placeholder="如：国际服、日服苹果、安卓服">
+    </div>
+    <div class="form-group">
+      <label>排序（小的靠前）</label>
+      <input type="number" id="sv-sort" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label>状态</label>
+      <select id="sv-active"><option value="1">显示</option><option value="0">隐藏</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('server-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveServer()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 种类弹窗 -->
+<div class="modal-overlay" id="type-modal">
+  <div class="modal" style="width:400px">
+    <h3 id="type-modal-title">添加商品种类</h3>
+    <div class="form-group">
+      <label>种类名称 <span class="req">*</span></label>
+      <input type="text" id="type-name" placeholder="如：钻石、礼包、通行证">
+    </div>
+    <div class="form-group">
+      <label>排序（小的靠前）</label>
+      <input type="number" id="type-sort" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label>状态</label>
+      <select id="type-active"><option value="1">显示</option><option value="0">隐藏</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('type-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveType()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 游戏弹窗 -->
+<div class="modal-overlay" id="game-modal">
+  <div class="modal">
+    <h3 id="gm-title">添加游戏</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>所属分类 <span class="req">*</span></label>
+        <select id="g-cat-id"><option value="">-- 请选择分类 --</option></select>
+      </div>
+      <div class="form-group">
+        <label>游戏名称 <span class="req">*</span></label>
+        <input type="text" id="g-name" placeholder="如：原神">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Emoji 图标（无图片时显示）</label>
+        <input type="text" id="g-icon" placeholder="✨" maxlength="4" oninput="document.getElementById('g-icon-preview').textContent=this.value||'🎮'">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;gap:10px">
+        <div class="icon-preview" id="g-icon-preview">🎮</div>
+        <span style="color:var(--text2);font-size:12px">Emoji预览</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>游戏图标图片（优先于Emoji显示）</label>
+      <div id="g-icon-upload-area" style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative" onclick="document.getElementById('g-icon-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleIconDrop(event)">
+        <input type="file" id="g-icon-file" accept="image/*" style="display:none" onchange="handleIconFile(this.files[0])">
+        <div id="g-icon-upload-placeholder">
+          <div style="font-size:28px;margin-bottom:6px">🖼️</div>
+          <div style="color:var(--text2);font-size:13px">点击或拖拽上传图片</div>
+          <div style="color:var(--text3);font-size:11px;margin-top:4px">支持 PNG / JPG / GIF / WEBP，最大 5MB</div>
+        </div>
+        <div id="g-icon-preview-wrap" style="display:none;align-items:center;gap:14px;justify-content:center">
+          <img id="g-icon-img-preview" src="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--border)">
+          <div style="text-align:left">
+            <div id="g-icon-img-name" style="font-size:13px;color:var(--text)"></div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">点击重新选择</div>
+            <button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="event.stopPropagation();clearIconImg()">删除图片</button>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="g-icon-url" value="">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>封面背景色</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="g-color" placeholder="#1a1a2e" oninput="document.getElementById('g-color-dot').style.background=this.value">
+          <div id="g-color-dot" style="width:36px;height:36px;border-radius:8px;background:#1a1a2e;border:1px solid var(--border);flex-shrink:0"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>排序</label>
+        <input type="number" id="g-sort" placeholder="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>简介</label>
+      <input type="text" id="g-desc" placeholder="如：开放世界冒险RPG">
+    </div>
+    <div class="form-group">
+      <label>状态</label>
+      <select id="g-active"><option value="1">显示</option><option value="0">隐藏</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('game-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveGame()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分类弹窗 -->
+<div class="modal-overlay" id="cat-modal">
+  <div class="modal" style="width:400px">
+    <h3 id="cm-title">添加分类</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>分类名称 <span class="req">*</span></label>
+        <input type="text" id="c-name" placeholder="如：热门游戏">
+      </div>
+      <div class="form-group">
+        <label>Emoji 图标</label>
+        <input type="text" id="c-icon" placeholder="🔥" maxlength="4">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>排序（小的靠前）</label>
+      <input type="number" id="c-sort" placeholder="0">
+    </div>
+    <div class="form-group">
+      <label>状态</label>
+      <select id="c-active"><option value="1">显示</option><option value="0">隐藏</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('cat-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveCat()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentOrderId=null,currentProductId=null,currentGameId=null,currentCatId=null;
+let ordersPage=1,allGames=[],allCats=[];
+
+async function doLogin(){
+  const res=await api('/admin/login','POST',{username:document.getElementById('login-user').value,password:document.getElementById('login-pass').value});
+  if(res.code===0){document.getElementById('login-page').style.display='none';document.getElementById('app').style.display='block';showPage('dashboard');}
+  else{const e=document.getElementById('login-err');e.textContent=res.msg;e.style.display='block';}
+}
+async function doLogout(){await api('/admin/logout','POST');location.reload();}
+
+const PAGES=['dashboard','orders','products','games','categories','servers'];
+function showPage(name){
+  PAGES.forEach(p=>document.getElementById('page-'+p).style.display=p===name?'block':'none');
+  document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active',PAGES[i]===name));
+  if(name==='dashboard'){loadStats();loadPending();}
+  if(name==='orders'){ordersPage=1;loadOrders();}
+  if(name==='products'){loadGameOptions().then(()=>loadProducts());}
+  if(name==='games'){loadCatOptions().then(()=>loadGames());}
+  if(name==='categories')loadCats();
+  if(name==='servers'){loadSvGameOptions();}
+}
+
+async function loadStats(){
+  const res=await api('/admin/stats');if(res.code!==0)return;
+  document.getElementById('s-today-cnt').textContent=res.data.today_count;
+  document.getElementById('s-today-amt').textContent='¥'+res.data.today_amount.toFixed(2);
+  document.getElementById('s-pending').textContent=res.data.pending_count;
+  document.getElementById('s-total-amt').textContent='¥'+res.data.total_amount.toFixed(2);
+}
+
+async function loadPending(){
+  const res=await api('/admin/orders?status=1&pay_status=1&page_size=10');
+  const tb=document.getElementById('pending-tbody');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="7">暂无待处理订单 ✅</td></tr>';return;}
+  tb.innerHTML=res.data.map(o=>`<tr>
+    <td class="mono" style="color:var(--text2)">${o.created_at.slice(5,16)}</td>
+    <td class="mono" style="font-size:11px">${o.order_no}</td>
+    <td>${o.product_name}<br><span style="color:var(--text2);font-size:11px">${o.game_name}</span></td>
+    <td><b>${o.game_account}</b></td>
+    <td style="color:var(--text2)">${(o.game_zone||'')+' '+(o.game_role||'')}</td>
+    <td style="color:var(--accent2)">¥${o.amount}</td>
+    <td><button class="btn btn-success btn-sm" onclick="openOrder(${o.id})">处理</button></td>
+  </tr>`).join('');
+}
+
+async function loadOrders(){
+  const status=document.getElementById('f-status').value,pay=document.getElementById('f-pay').value,kw=document.getElementById('f-kw').value;
+  let url=`/admin/orders?page=${ordersPage}&page_size=20`;
+  if(status!=='')url+=`&status=${status}`;if(pay!=='')url+=`&pay_status=${pay}`;if(kw)url+=`&keyword=${encodeURIComponent(kw)}`;
+  const res=await api(url);if(res.code!==0)return;
+  const tb=document.getElementById('orders-tbody');
+  if(!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="8">没有找到订单</td></tr>';document.getElementById('orders-total').textContent='共 0 条';document.getElementById('orders-pages').innerHTML='';return;}
+  const sm={0:'<span class="badge badge-gray">待处理</span>',1:'<span class="badge badge-yellow">处理中</span>',2:'<span class="badge badge-green">已完成</span>',3:'<span class="badge badge-red">已退款</span>'};
+  const pm={0:'<span class="badge badge-gray">未支付</span>',1:'<span class="badge badge-blue">已支付</span>'};
+  tb.innerHTML=res.data.map(o=>`<tr>
+    <td class="mono" style="color:var(--text2);font-size:11px">${o.created_at.slice(0,16)}</td>
+    <td class="mono" style="font-size:11px">${o.order_no}</td>
+    <td>${o.product_name}<br><span style="color:var(--text2);font-size:11px">${o.game_name}</span></td>
+    <td><b>${o.game_account}</b><br><span style="color:var(--text2);font-size:11px">${o.game_zone||''} ${o.game_role||''}</span></td>
+    <td style="color:var(--accent2)">¥${o.amount}</td>
+    <td>${pm[o.pay_status]||''}</td>
+    <td>${sm[o.order_status]||''}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openOrder(${o.id})">查看</button></td>
+  </tr>`).join('');
+  document.getElementById('orders-total').textContent=`共 ${res.total} 条`;
+  const tp=Math.ceil(res.total/res.page_size);
+  let h=`<button class="page-btn" onclick="goPage(${ordersPage-1})" ${ordersPage<=1?'disabled':''}>上一页</button>`;
+  for(let i=Math.max(1,ordersPage-2);i<=Math.min(tp,ordersPage+2);i++)h+=`<button class="page-btn ${i===ordersPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  h+=`<button class="page-btn" onclick="goPage(${ordersPage+1})" ${ordersPage>=tp?'disabled':''}>下一页</button>`;
+  document.getElementById('orders-pages').innerHTML=h;
+}
+function goPage(p){ordersPage=p;loadOrders();}
+
+async function openOrder(id){
+  currentOrderId=id;
+  const res=await api(`/admin/order/${id}`);if(res.code!==0)return;
+  const o=res.data;
+  const sm={0:'待处理',1:'处理中',2:'已完成',3:'已退款'},pm={0:'未支付',1:'已支付'};
+  document.getElementById('order-detail').innerHTML=`
+    <div class="detail-row"><span class="dk">订单号</span><span class="dv mono">${o.order_no}</span></div>
+    <div class="detail-row"><span class="dk">商品</span><span class="dv">${o.product_name}</span></div>
+    <div class="detail-row"><span class="dk">游戏</span><span class="dv">${o.game_name}</span></div>
+    <div class="detail-row"><span class="dk">游戏账号</span><span class="dv"><b>${o.game_account}</b></span></div>
+    <div class="detail-row"><span class="dk">区服</span><span class="dv">${o.game_zone||'-'}</span></div>
+    <div class="detail-row"><span class="dk">角色名</span><span class="dv">${o.game_role||'-'}</span></div>
+    <div class="detail-row"><span class="dk">金额</span><span class="dv" style="color:var(--accent2)">¥${o.amount}</span></div>
+    <div class="detail-row"><span class="dk">支付</span><span class="dv">${pm[o.pay_status]}</span></div>
+    <div class="detail-row"><span class="dk">状态</span><span class="dv">${sm[o.order_status]}</span></div>
+    <div class="detail-row"><span class="dk">用户备注</span><span class="dv">${o.remark||'-'}</span></div>
+    <div class="detail-row"><span class="dk">下单时间</span><span class="dv mono">${o.created_at}</span></div>
+    <div class="detail-row"><span class="dk">支付时间</span><span class="dv mono">${o.paid_at||'-'}</span></div>`;
+  document.getElementById('order-remark').value=o.admin_remark||'';
+  document.getElementById('btn-complete').style.display=o.order_status<2?'':'none';
+  document.getElementById('btn-refund').style.display=o.order_status<2?'':'none';
+  document.getElementById('order-modal').classList.add('show');
+}
+async function doComplete(){
+  const res=await api(`/admin/order/${currentOrderId}/complete`,'POST',{admin_remark:document.getElementById('order-remark').value});
+  if(res.code===0){toast('✅ 已完成，用户已通知');closeModal('order-modal');loadPending();loadStats();if(document.getElementById('page-orders').style.display!=='none')loadOrders();}
+  else toast(res.msg,true);
+}
+async function doRefund(){
+  if(!confirm('确认标记退款？'))return;
+  const res=await api(`/admin/order/${currentOrderId}/refund`,'POST',{admin_remark:document.getElementById('order-remark').value||'已退款'});
+  if(res.code===0){toast('已标记退款');closeModal('order-modal');loadOrders();loadStats();}
+}
+
+// ── 商品 ──
+async function loadGameOptions(){
+  const res=await api('/admin/games');allGames=res.data||[];
+  const fpg=document.getElementById('fp-game');
+  fpg.innerHTML='<option value="">全部游戏</option>'+allGames.map(g=>`<option value="${g.id}">${g.icon} ${g.name}</option>`).join('');
+  const pgid=document.getElementById('p-game-id');
+  pgid.innerHTML='<option value="">-- 请选择游戏 --</option>'+allGames.filter(g=>g.is_active).map(g=>`<option value="${g.id}">${g.icon} ${g.name}</option>`).join('');
+}
+async function loadProducts(){
+  const gid=document.getElementById('fp-game').value;
+  const kw=document.getElementById('fp-kw')?document.getElementById('fp-kw').value.trim():'';
+  let url='/admin/products';
+  const params=[];
+  if(gid)params.push('game_id='+gid);
+  if(kw)params.push('keyword='+encodeURIComponent(kw));
+  if(params.length)url+='?'+params.join('&');
+  const res=await api(url);
+  const tb=document.getElementById('products-tbody');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="8">暂无商品，点右上角添加</td></tr>';return;}
+  tb.innerHTML=res.data.map(p=>`<tr>
+    <td class="mono" style="color:var(--text2)">${p.id}</td>
+    <td>${p.game_name||'-'}</td>
+    <td>${p.name}</td>
+    <td style="color:var(--accent2)">¥${p.price}</td>
+    <td style="color:var(--text2)">${p.cost?'¥'+p.cost:'-'}</td>
+    <td style="color:var(--text2)">${p.sort_order}</td>
+    <td>${p.is_active?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>'}</td>
+    <td class="td-actions"><button class="btn btn-ghost btn-sm" onclick="openProductModal(${p.id})">编辑</button><button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">下架</button></td>
+  </tr>`).join('');
+}
+async function openProductModal(id,preGameId,preServerId,preTypeId){
+  currentProductId=id||null;
+  await loadGameOptions();
+  document.getElementById('pm-title').textContent=id?'编辑商品':'添加商品';
+  if(!id){
+    ['p-name','p-price','p-cost','p-sort','p-desc'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('p-game-id').value=preGameId||'';
+    document.getElementById('p-active').value='1';
+    if(preGameId){
+      await onProductGameChange(preGameId);
+      document.getElementById('p-server-id').value=preServerId||'';
+      if(preServerId){await onProductServerChange(preServerId);document.getElementById('p-type-id').value=preTypeId||'';}
+    } else {
+      document.getElementById('p-server-id').innerHTML='<option value="">-- 先选游戏 --</option>';
+      document.getElementById('p-type-id').innerHTML='<option value="">-- 先选服务器 --</option>';
+    }
+  }
+  else{
+    const res=await api('/admin/products');const p=res.data.find(x=>x.id===id);if(!p)return;
+    document.getElementById('p-game-id').value=p.game_id||'';
+    if(p.game_id){await onProductGameChange(p.game_id);}
+    document.getElementById('p-server-id').value=p.server_id||'';
+    if(p.server_id){await onProductServerChange(p.server_id);}
+    document.getElementById('p-type-id').value=p.type_id||'';
+    document.getElementById('p-name').value=p.name;document.getElementById('p-price').value=p.price;
+    document.getElementById('p-cost').value=p.cost||'';document.getElementById('p-sort').value=p.sort_order;
+    document.getElementById('p-desc').value=p.description||'';document.getElementById('p-active').value=p.is_active?'1':'0';
+  }
+  document.getElementById('product-modal').classList.add('show');
+}
+async function saveProduct(){
+  const gameId=document.getElementById('p-game-id').value,name=document.getElementById('p-name').value.trim(),price=parseFloat(document.getElementById('p-price').value);
+  if(!gameId){toast('请选择关联游戏',true);return;}if(!name){toast('请填写商品名称',true);return;}if(!price){toast('请填写售价',true);return;}
+  const game=allGames.find(g=>g.id==gameId);
+  const serverId=document.getElementById('p-server-id').value;
+  const typeId=document.getElementById('p-type-id').value;
+  const data={game_id:parseInt(gameId),game_name:game?game.name:'',server_id:serverId?parseInt(serverId):null,type_id:typeId?parseInt(typeId):null,name,price,cost:parseFloat(document.getElementById('p-cost').value)||null,sort_order:parseInt(document.getElementById('p-sort').value)||0,description:document.getElementById('p-desc').value.trim(),is_active:parseInt(document.getElementById('p-active').value)};
+  const res=currentProductId?await api(`/admin/product/${currentProductId}`,'PUT',data):await api('/admin/product','POST',data);
+  if(res.code===0){toast('保存成功');closeModal('product-modal');loadProducts();}else toast(res.msg,true);
+}
+async function deleteProduct(id){if(!confirm('确认下架此商品？'))return;const res=await api(`/admin/product/${id}`,'DELETE');if(res.code===0){toast('已下架');loadProducts();}}
+
+// ── 游戏 ──
+async function loadCatOptions(){
+  const res=await api('/admin/categories');allCats=res.data||[];
+  const sel=document.getElementById('g-cat-id');
+  sel.innerHTML='<option value="">-- 请选择分类 --</option>'+allCats.filter(c=>c.is_active).map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+}
+async function loadGames(){
+  const res=await api('/admin/games');
+  const tb=document.getElementById('games-tbody');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="9">暂无游戏，点右上角添加</td></tr>';return;}
+  tb.innerHTML=res.data.map(g=>`<tr>
+    <td class="mono" style="color:var(--text2)">${g.id}</td>
+    <td>${g.icon_url?`<img src="${g.icon_url}" style="width:36px;height:36px;border-radius:8px;object-fit:cover">`:` <span style='font-size:22px'>${g.icon}</span>`}</td>
+    <td><b>${g.name}</b></td>
+    <td style="color:var(--text2)">${g.category_name||'-'}</td>
+    <td style="color:var(--text2);font-size:12px">${g.description||'-'}</td>
+    <td><span class="color-dot" style="background:${g.cover_color}"></span><span class="mono" style="font-size:11px">${g.cover_color}</span></td>
+    <td style="color:var(--text2)">${g.sort_order}</td>
+    <td>${g.is_active?'<span class="badge badge-green">显示</span>':'<span class="badge badge-gray">隐藏</span>'}</td>
+    <td class="td-actions"><button class="btn btn-ghost btn-sm" onclick="openGameModal(${g.id})">编辑</button><button class="btn btn-danger btn-sm" onclick="deleteGame(${g.id})">删除</button></td>
+  </tr>`).join('');
+}
+async function openGameModal(id){
+  currentGameId=id||null;await loadCatOptions();
+  document.getElementById('gm-title').textContent=id?'编辑游戏':'添加游戏';
+  if(!id){['g-name','g-icon','g-sort','g-desc'].forEach(x=>document.getElementById(x).value='');document.getElementById('g-cat-id').value='';document.getElementById('g-color').value='#1a1a2e';document.getElementById('g-color-dot').style.background='#1a1a2e';document.getElementById('g-icon-preview').textContent='🎮';document.getElementById('g-active').value='1';clearIconImg();}
+  else{
+    const res=await api('/admin/games');const g=res.data.find(x=>x.id===id);if(!g)return;
+    document.getElementById('g-cat-id').value=g.category_id||'';document.getElementById('g-name').value=g.name;
+    document.getElementById('g-icon').value=g.icon||'';document.getElementById('g-icon-preview').textContent=g.icon||'🎮';
+    document.getElementById('g-color').value=g.cover_color||'#1a1a2e';document.getElementById('g-color-dot').style.background=g.cover_color||'#1a1a2e';
+    document.getElementById('g-sort').value=g.sort_order;document.getElementById('g-desc').value=g.description||'';document.getElementById('g-active').value=g.is_active?'1':'0';if(g.icon_url){setIconImg(g.icon_url,'已有图片');}else{clearIconImg();}
+  }
+  document.getElementById('game-modal').classList.add('show');
+}
+async function saveGame(){
+  const catId=document.getElementById('g-cat-id').value,name=document.getElementById('g-name').value.trim();
+  if(!catId){toast('请选择所属分类',true);return;}if(!name){toast('请填写游戏名称',true);return;}
+  const iconUrl=document.getElementById('g-icon-url').value;const data={category_id:parseInt(catId),name,icon:document.getElementById('g-icon').value||'🎮',icon_url:iconUrl||null,cover_color:document.getElementById('g-color').value||'#1a1a2e',description:document.getElementById('g-desc').value.trim(),sort_order:parseInt(document.getElementById('g-sort').value)||0,is_active:parseInt(document.getElementById('g-active').value)};
+  const res=currentGameId?await api(`/admin/game/${currentGameId}`,'PUT',data):await api('/admin/game','POST',data);
+  if(res.code===0){toast('保存成功');closeModal('game-modal');loadGames();}else toast(res.msg,true);
+}
+async function deleteGame(id){if(!confirm('确认删除此游戏？'))return;const res=await api(`/admin/game/${id}`,'DELETE');if(res.code===0){toast('已删除');loadGames();}}
+
+// ── 分类 ──
+async function loadCats(){
+  const res=await api('/admin/categories');
+  const tb=document.getElementById('cats-tbody');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="6">暂无分类，点右上角添加</td></tr>';return;}
+  tb.innerHTML=res.data.map(c=>`<tr>
+    <td class="mono" style="color:var(--text2)">${c.id}</td>
+    <td style="font-size:22px">${c.icon}</td>
+    <td><b>${c.name}</b></td>
+    <td style="color:var(--text2)">${c.sort_order}</td>
+    <td>${c.is_active?'<span class="badge badge-green">显示</span>':'<span class="badge badge-gray">隐藏</span>'}</td>
+    <td class="td-actions"><button class="btn btn-ghost btn-sm" onclick="openCatModal(${c.id})">编辑</button><button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id})">删除</button></td>
+  </tr>`).join('');
+}
+async function openCatModal(id){
+  currentCatId=id||null;
+  document.getElementById('cm-title').textContent=id?'编辑分类':'添加分类';
+  if(!id){['c-name','c-icon','c-sort'].forEach(x=>document.getElementById(x).value='');document.getElementById('c-active').value='1';}
+  else{const res=await api('/admin/categories');const c=res.data.find(x=>x.id===id);if(!c)return;document.getElementById('c-name').value=c.name;document.getElementById('c-icon').value=c.icon||'';document.getElementById('c-sort').value=c.sort_order;document.getElementById('c-active').value=c.is_active?'1':'0';}
+  document.getElementById('cat-modal').classList.add('show');
+}
+async function saveCat(){
+  const name=document.getElementById('c-name').value.trim();
+  if(!name){toast('请填写分类名称',true);return;}
+  const data={name,icon:document.getElementById('c-icon').value||'🎮',sort_order:parseInt(document.getElementById('c-sort').value)||0,is_active:parseInt(document.getElementById('c-active').value)};
+  const res=currentCatId?await api(`/admin/category/${currentCatId}`,'PUT',data):await api('/admin/category','POST',data);
+  if(res.code===0){toast('保存成功');closeModal('cat-modal');loadCats();}else toast(res.msg,true);
+}
+async function deleteCat(id){if(!confirm('确认删除此分类？'))return;const res=await api(`/admin/category/${id}`,'DELETE');if(res.code===0){toast('已删除');loadCats();}}
+
+// ── 工具 ──
+function clearIconImg(){
+  document.getElementById('g-icon-url').value='';
+  document.getElementById('g-icon-upload-placeholder').style.display='block';
+  document.getElementById('g-icon-preview-wrap').style.display='none';
+  document.getElementById('g-icon-file').value='';
+}
+function setIconImg(url,name){
+  document.getElementById('g-icon-url').value=url;
+  document.getElementById('g-icon-img-preview').src=url;
+  document.getElementById('g-icon-img-name').textContent=name||url.split('/').pop();
+  document.getElementById('g-icon-upload-placeholder').style.display='none';
+  document.getElementById('g-icon-preview-wrap').style.display='flex';
+}
+async function handleIconFile(file){
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('图片不能超过5MB',true);return;}
+  const fd=new FormData();fd.append('file',file);
+  const res=await fetch('/admin/upload/game_icon',{method:'POST',body:fd});
+  const data=await res.json();
+  if(data.code===0){setIconImg(data.url,file.name);toast('图片上传成功');}
+  else toast(data.msg||'上传失败',true);
+}
+function handleIconDrop(e){
+  e.preventDefault();
+  document.getElementById('g-icon-upload-area').style.borderColor='var(--border)';
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/'))handleIconFile(file);
+}
+// ── 服务器&种类管理 ──
+let currentServerId=null,currentTypeId=null,currentSvGameId=null,currentSvProductId=null;
+
+async function loadSvGameOptions(){
+  const res=await api('/admin/games');
+  const sel=document.getElementById('sv-game-sel');
+  sel.innerHTML='<option value="">-- 请选择游戏 --</option>'+(res.data||[]).filter(g=>g.is_active).map(g=>`<option value="${g.id}">${g.icon} ${g.name}</option>`).join('');
+}
+
+async function onSelectGame(gameId){
+  currentSvGameId=gameId||null;
+  currentServerId=null;
+  document.getElementById('type-list').innerHTML='<tr class="empty-row"><td colspan="4">请先选择服务器</td></tr>';
+  document.getElementById('sv-prod-list').innerHTML='<tr class="empty-row"><td colspan="3">请先选择种类</td></tr>';
+  document.getElementById('sv-type-title').textContent='';
+  document.getElementById('sv-prod-title').textContent='';
+  document.getElementById('btn-add-type').disabled=true;
+  document.getElementById('btn-add-sv-prod').disabled=true;
+  if(!gameId){document.getElementById('sv-list').innerHTML='<tr class="empty-row"><td colspan="4">请先选择游戏</td></tr>';return;}
+  loadServers(gameId);
+}
+
+async function loadServers(gameId){
+  const res=await api('/admin/game/'+gameId+'/servers');
+  const tb=document.getElementById('sv-list');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="4">暂无服务器，点下方添加</td></tr>';return;}
+  tb.innerHTML=res.data.map(s=>`<tr style="cursor:pointer" onclick="onSelectServer(${s.id},'${s.name}')">
+    <td><b>${s.name}</b></td>
+    <td style="color:var(--text2)">${s.sort_order}</td>
+    <td>${s.is_active?'<span class="badge badge-green">显示</span>':'<span class="badge badge-gray">隐藏</span>'}</td>
+    <td class="td-actions">
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openServerModal(${s.id})">编辑</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteServer(${s.id})">删除</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function onSelectServer(serverId, serverName){
+  currentServerId=serverId;
+  document.getElementById('sv-type-title').textContent=serverName;
+  document.getElementById('btn-add-type').disabled=false;
+  document.getElementById('sv-prod-list').innerHTML='<tr class="empty-row"><td colspan="3">请先选择种类</td></tr>';
+  document.getElementById('sv-prod-title').textContent='';
+  document.getElementById('btn-add-sv-prod').disabled=true;
+  loadTypes(serverId);
+}
+
+async function loadTypes(serverId){
+  const res=await api('/admin/server/'+serverId+'/types');
+  const tb=document.getElementById('type-list');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="4">暂无种类，点下方添加</td></tr>';return;}
+  tb.innerHTML=res.data.map(t=>`<tr style="cursor:pointer" onclick="onSelectType(${t.id},'${t.name}')">
+    <td><b>${t.name}</b></td>
+    <td style="color:var(--text2)">${t.sort_order}</td>
+    <td>${t.is_active?'<span class="badge badge-green">显示</span>':'<span class="badge badge-gray">隐藏</span>'}</td>
+    <td class="td-actions">
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openTypeModal(${t.id})">编辑</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteType(${t.id})">删除</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function onSelectType(typeId, typeName){
+  currentSvProductId=typeId;
+  document.getElementById('sv-prod-title').textContent=typeName;
+  document.getElementById('btn-add-sv-prod').disabled=false;
+  const res=await api('/api/type/'+typeId+'/products');
+  const tb=document.getElementById('sv-prod-list');
+  if(!res.data||!res.data.length){tb.innerHTML='<tr class="empty-row"><td colspan="3">暂无商品</td></tr>';return;}
+  tb.innerHTML=res.data.map(p=>`<tr>
+    <td>${p.name}</td>
+    <td style="color:var(--accent2)">¥${p.price}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="openProductModal(${p.id})">编辑</button></td>
+  </tr>`).join('');
+}
+
+function openSvProductModal(){
+  if(!currentSvGameId||!currentServerId||!currentSvProductId){toast('请先选择游戏→服务器→种类',true);return;}
+  openProductModal(null,currentSvGameId,currentServerId,currentSvProductId);
+}
+
+// 服务器CRUD
+function openServerModal(id){
+  currentServerId=id||null;
+  if(!currentSvGameId){toast('请先选择游戏',true);return;}
+  document.getElementById('sv-modal-title').textContent=id?'编辑服务器':'添加服务器';
+  document.getElementById('sv-name').value='';
+  document.getElementById('sv-sort').value='0';
+  document.getElementById('sv-active').value='1';
+  if(id){
+    api('/admin/game/'+currentSvGameId+'/servers').then(res=>{
+      const s=res.data.find(x=>x.id===id);if(!s)return;
+      document.getElementById('sv-name').value=s.name;
+      document.getElementById('sv-sort').value=s.sort_order;
+      document.getElementById('sv-active').value=s.is_active?'1':'0';
+    });
+  }
+  document.getElementById('server-modal').classList.add('show');
+}
+async function saveServer(){
+  const name=document.getElementById('sv-name').value.trim();
+  if(!name){toast('请填写服务器名称',true);return;}
+  const data={game_id:parseInt(currentSvGameId),name,sort_order:parseInt(document.getElementById('sv-sort').value)||0,is_active:parseInt(document.getElementById('sv-active').value)};
+  const res=currentServerId?await api('/admin/server/'+currentServerId,'PUT',data):await api('/admin/server','POST',data);
+  if(res.code===0){toast('保存成功');closeModal('server-modal');loadServers(currentSvGameId);}else toast(res.msg,true);
+}
+async function deleteServer(id){
+  if(!confirm('确认删除此服务器？该服务器下的种类也会隐藏'))return;
+  const res=await api('/admin/server/'+id,'DELETE');
+  if(res.code===0){toast('已删除');loadServers(currentSvGameId);}
+}
+
+// 种类CRUD
+function openTypeModal(id){
+  currentTypeId=id||null;
+  if(!currentServerId){toast('请先选择服务器',true);return;}
+  document.getElementById('type-modal-title').textContent=id?'编辑种类':'添加种类';
+  document.getElementById('type-name').value='';
+  document.getElementById('type-sort').value='0';
+  document.getElementById('type-active').value='1';
+  if(id){
+    api('/admin/server/'+currentServerId+'/types').then(res=>{
+      const t=res.data.find(x=>x.id===id);if(!t)return;
+      document.getElementById('type-name').value=t.name;
+      document.getElementById('type-sort').value=t.sort_order;
+      document.getElementById('type-active').value=t.is_active?'1':'0';
+    });
+  }
+  document.getElementById('type-modal').classList.add('show');
+}
+async function saveType(){
+  const name=document.getElementById('type-name').value.trim();
+  if(!name){toast('请填写种类名称',true);return;}
+  const data={server_id:parseInt(currentServerId),game_id:parseInt(currentSvGameId),name,sort_order:parseInt(document.getElementById('type-sort').value)||0,is_active:parseInt(document.getElementById('type-active').value)};
+  const res=currentTypeId?await api('/admin/type/'+currentTypeId,'PUT',data):await api('/admin/type','POST',data);
+  if(res.code===0){toast('保存成功');closeModal('type-modal');loadTypes(currentServerId);}else toast(res.msg,true);
+}
+async function deleteType(id){
+  if(!confirm('确认删除此种类？'))return;
+  const res=await api('/admin/type/'+id,'DELETE');
+  if(res.code===0){toast('已删除');loadTypes(currentServerId);}
+}
+
+// 商品弹窗：支持从服务器&种类页面预填
+async function onProductGameChange(gameId){
+  const serverSel=document.getElementById('p-server-id');
+  const typeSel=document.getElementById('p-type-id');
+  serverSel.innerHTML='<option value="">-- 无服务器（直接挂游戏）--</option>';
+  typeSel.innerHTML='<option value="">-- 无种类 --</option>';
+  if(!gameId)return;
+  const res=await api('/admin/game/'+gameId+'/servers');
+  (res.data||[]).forEach(s=>serverSel.innerHTML+=`<option value="${s.id}">${s.name}</option>`);
+}
+async function onProductServerChange(serverId){
+  const typeSel=document.getElementById('p-type-id');
+  typeSel.innerHTML='<option value="">-- 无种类 --</option>';
+  if(!serverId)return;
+  const res=await api('/admin/server/'+serverId+'/types');
+  (res.data||[]).forEach(t=>typeSel.innerHTML+=`<option value="${t.id}">${t.name}</option>`);
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function toast(msg,isError){const el=document.getElementById('toast');el.textContent=msg;el.style.borderColor=isError?'var(--danger)':'var(--accent2)';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
+async function api(url,method='GET',body=null){const opts={method,headers:{'Content-Type':'application/json'}};if(body)opts.body=JSON.stringify(body);const res=await fetch(url,opts);return res.json();}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('show');}));
+</script>
+</body>
+</html>

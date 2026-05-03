@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>游戏代充</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+
+:root {
+  --bg: #f2f4f8;
+  --bg2: #ffffff;
+  --bg3: #f7f8fc;
+  --card: #ffffff;
+  --border: #e4e8f0;
+  --accent: #ff6b35;
+  --accent2: #ffa502;
+  --blue: #2f80ed;
+  --green: #27ae60;
+  --text: #1a1d2e;
+  --text2: #6b7394;
+  --text3: #b0b8d4;
+  --sans: 'Noto Sans SC', sans-serif;
+  --nav-h: 60px;
+  --bottom-h: 64px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ───── 通用 ───── */
+.hidden { display: none !important; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 12px;
+  font-family: var(--sans); font-weight: 700; cursor: pointer;
+  transition: all .15s; outline: none;
+}
+.btn-orange { background: linear-gradient(135deg, #ff6b35, #ff9500); color: #fff; }
+.btn-orange:active { transform: scale(.97); filter: brightness(.9); }
+.btn-ghost  { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+
+input, textarea {
+  font-family: var(--sans);
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  padding: 12px 14px;
+  transition: border-color .2s;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--text3); }
+
+/* ───── 顶部导航 ───── */
+.topnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 10px rgba(0,0,0,.06);
+}
+.topnav .back-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; background: var(--bg3);
+  color: var(--text); font-size: 18px; cursor: pointer;
+  margin-right: 10px;
+}
+.topnav h1 { font-size: 16px; font-weight: 700; flex: 1; }
+.topnav .logo {
+  font-size: 18px; font-weight: 900;
+  background: linear-gradient(135deg, #ff6b35, #ffa502);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+/* ───── 底部导航 ───── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: var(--bottom-h);
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+}
+.bottom-nav .nav-tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer;
+  color: var(--text2); font-size: 11px; transition: color .2s;
+}
+.bottom-nav .nav-tab .icon { font-size: 22px; }
+.bottom-nav .nav-tab.active { color: var(--accent); }
+
+/* ───── 页面容器 ───── */
+.page {
+  padding-top: var(--nav-h);
+  padding-bottom: calc(var(--bottom-h) + 12px);
+  min-height: 100vh;
+}
+.page-inner { padding: var(--nav-h) 0 calc(var(--bottom-h) + 16px); }
+
+/* ───── 首页 ───── */
+
+/* 搜索栏 */
+.search-wrap {
+  padding: 16px;
+  position: relative;
+}
+.search-box {
+  display: flex; align-items: center; gap: 10px;
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 11px 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  transition: border-color .2s;
+}
+.search-box:focus-within { border-color: var(--accent); }
+.search-box .search-icon { font-size: 16px; color: var(--text2); flex-shrink: 0; }
+.search-box input {
+  background: transparent; border: none; padding: 0;
+  font-size: 14px; flex: 1;
+}
+.search-box input:focus { border: none; }
+
+.search-results {
+  position: absolute; left: 16px; right: 16px; top: 72px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  z-index: 50;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.search-result-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+  transition: background .15s;
+  border-bottom: 1px solid var(--border);
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:active { background: var(--bg3); }
+.search-result-item .s-icon { font-size: 24px; }
+.search-result-item .s-name { font-weight: 600; }
+.search-result-item .s-desc { font-size: 12px; color: var(--text2); }
+
+/* 分类标签 */
+.category-tabs {
+  display: flex; gap: 8px;
+  padding: 0 16px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.category-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  color: var(--text2);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  transition: all .2s;
+}
+.cat-tab.active {
+  background: linear-gradient(135deg, rgba(255,107,53,.2), rgba(255,149,0,.1));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 游戏卡片网格 */
+.section-title {
+  padding: 0 16px 12px;
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 0 16px;
+  margin-bottom: 20px;
+}
+.game-card {
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+}
+.game-card:active { transform: scale(.96); }
+.game-card-cover {
+  height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  position: relative;
+}
+.game-card-cover::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.6));
+}
+.game-card-body { padding: 8px 8px 10px; }
+.game-card-name {
+  font-size: 12px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.game-card-desc {
+  font-size: 10px; color: var(--text2); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Banner区域 */
+.banner {
+  margin: 0 16px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ff6b35, #ff9500);
+  border: 1px solid var(--border);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.banner::before {
+  content: '🎮';
+  position: absolute; right: 20px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 60px; opacity: .15;
+}
+.banner-label {
+  font-size: 11px; color: #fff;
+  background: rgba(255,255,255,.2);
+  border-radius: 4px; padding: 2px 7px;
+  display: inline-block; margin-bottom: 8px;
+  font-weight: 700; letter-spacing: 0.5px;
+}
+.banner h2 { font-size: 18px; font-weight: 900; margin-bottom: 4px; color: #fff; }
+.banner p  { font-size: 12px; color: rgba(255,255,255,.8); }
+
+/* ───── 游戏详情页 ───── */
+.game-hero {
+  height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 72px;
+  position: relative;
+}
+.game-hero-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
+}
+.game-hero-info h2 { font-size: 22px; font-weight: 900; }
+.game-hero-info p  { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+.products-list { padding: 16px; }
+.product-item {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.product-item:active { transform: scale(.98); }
+.product-item.selected {
+  border-color: var(--accent);
+  background: rgba(255,107,53,.08);
+}
+.product-item .p-name { font-size: 15px; font-weight: 700; }
+.product-item .p-desc { font-size: 12px; color: var(--text2); margin-top: 3px; }
+.product-item .p-price {
+  font-size: 20px; font-weight: 900;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.product-item .p-price span { font-size: 13px; }
+
+/* 下单表单 */
+.order-form {
+  padding: 0 16px 16px;
+}
+.form-label {
+  font-size: 13px; color: var(--text2);
+  margin-bottom: 6px; margin-top: 14px;
+  display: flex; align-items: center; gap: 4px;
+}
+.form-label .req { color: var(--accent); }
+.form-label .opt {
+  font-size: 11px; color: var(--text3);
+  background: var(--bg3); border-radius: 4px; padding: 1px 5px;
+}
+
+.submit-bar {
+  padding: 12px 16px;
+  background: rgba(255,255,255,.97);
+  border-top: 1px solid var(--border);
+  position: sticky; bottom: var(--bottom-h);
+  box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+  display: flex; align-items: center; gap: 12px;
+}
+.submit-bar .total {
+  flex: 1;
+  font-size: 13px; color: var(--text2);
+}
+.submit-bar .total b {
+  font-size: 22px; color: var(--accent); font-weight: 900;
+}
+.submit-bar .pay-btn {
+  padding: 13px 28px; font-size: 15px; border-radius: 14px;
+}
+
+/* ───── 个人中心 ───── */
+.profile-header {
+  padding: 24px 16px 20px;
+  background: linear-gradient(135deg, #ff6b35, #ff9500);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+}
+.profile-avatar {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+}
+.profile-info h3 { font-size: 16px; font-weight: 700; color: #fff; }
+.profile-info p  { font-size: 12px; color: rgba(255,255,255,.8); margin-top: 3px; }
+
+.profile-menu {
+  padding: 16px;
+}
+.menu-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 15px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+}
+.menu-item:active { transform: scale(.98); }
+.menu-item .m-icon { font-size: 22px; }
+.menu-item .m-text { flex: 1; }
+.menu-item .m-text strong { display: block; font-size: 14px; font-weight: 600; }
+.menu-item .m-text span   { font-size: 12px; color: var(--text2); }
+.menu-item .m-arrow { color: var(--text3); font-size: 16px; }
+
+/* 订单列表 */
+.order-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 16px 10px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+}
+.order-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.order-card-head .o-game { font-size: 13px; font-weight: 700; }
+.order-card-head .o-status { font-size: 12px; padding: 3px 8px; border-radius: 6px; }
+.status-0  { background: rgba(122,133,160,.15); color: var(--text2); }
+.status-1  { background: rgba(79,142,247,.15);  color: var(--blue); }
+.status-2  { background: rgba(46,204,113,.15);  color: var(--green); }
+.status-3  { background: rgba(255,107,53,.15);  color: var(--accent); }
+.order-card .o-product { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.order-card .o-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text2);
+}
+.order-card .o-meta .o-price { font-size: 16px; font-weight: 700; color: var(--accent); }
+
+/* 空状态 */
+.empty {
+  text-align: center; padding: 60px 20px;
+  color: var(--text2);
+}
+.empty .e-icon { font-size: 48px; margin-bottom: 12px; }
+.empty p { font-size: 14px; }
+
+/* loading */
+.loading {
+  text-align: center; padding: 40px;
+  color: var(--text2); font-size: 13px;
+}
+
+/* toast */
+.toast-wrap {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 999; pointer-events: none;
+}
+.toast-msg {
+  background: rgba(30,36,55,.95);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 20px;
+  font-size: 13px; white-space: nowrap;
+  opacity: 0; transform: translateY(-10px);
+  transition: all .3s;
+}
+.toast-msg.show { opacity: 1; transform: translateY(0); }
+
+/* 支付成功页 */
+.pay-result {
+  text-align: center; padding: 60px 24px 40px;
+}
+.pay-result .result-icon { font-size: 72px; margin-bottom: 16px; }
+.pay-result h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+.pay-result p  { color: var(--text2); font-size: 14px; line-height: 1.6; }
+.pay-result .result-btns { display: flex; gap: 12px; margin-top: 32px; }
+.pay-result .result-btns .btn { flex: 1; padding: 14px; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="topnav" id="topnav">
+  <div class="back-btn hidden" id="back-btn" onclick="goBack()">‹</div>
+  <h1 id="page-title"><span class="logo">⚡ 极速代充：未成年人禁止充值</span></h1>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav" id="bottom-nav">
+  <div class="nav-tab active" id="tab-home" onclick="showTab('home')">
+    <div class="icon">🏠</div>
+    <div>首页</div>
+  </div>
+  <div class="nav-tab" id="tab-profile" onclick="showTab('profile')">
+    <div class="icon">👤</div>
+    <div>我的</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap"><div class="toast-msg" id="toast"></div></div>
+
+<!-- ═══════════ 首页 ═══════════ -->
+<div id="page-home" class="page-inner">
+
+  <!-- 搜索 -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="搜索游戏名称..." id="search-input"
+             oninput="onSearch(this.value)" autocomplete="off">
+    </div>
+    <div class="search-results hidden" id="search-results"></div>
+  </div>
+
+  <!-- Banner -->
+  <div class="banner">
+    <div class="banner-label">限时优惠</div>
+    <h2>游戏充值 快人一步</h2>
+    <p>安全稳定 · 极速到账 · 7×16小时服务</p>
+  </div>
+
+  <!-- 分类标签 -->
+  <div class="category-tabs" id="category-tabs">
+    <div class="cat-tab active" data-id="all" onclick="filterCategory('all', this)">
+      🎯 全部
+    </div>
+  </div>
+
+  <!-- 游戏列表 -->
+  <div class="section-title" id="games-section-title">🔥 热门游戏</div>
+  <div class="games-grid" id="games-grid">
+    <div class="loading">加载中...</div>
+  </div>
+</div>
+
+<!-- ═══════════ 游戏详情页 ═══════════ -->
+<div id="page-game" class="page-inner hidden">
+  <div class="game-hero" id="game-hero">
+    <div class="game-hero-info">
+      <h2 id="game-name">-</h2>
+      <p id="game-desc">-</p>
+    </div>
+  </div>
+
+  <div class="products-list" id="products-list"></div>
+
+  <div class="order-form">
+    <div class="form-label">游戏账号 <span class="req">*</span></div>
+    <input type="text" id="input-account" placeholder="请输入游戏账号/UID">
+
+    <div class="form-label">区服 <span class="opt">选填</span></div>
+    <input type="text" id="input-zone" placeholder="如：安卓区、苹果区">
+
+    <div class="form-label">角色名 <span class="opt">选填</span></div>
+    <input type="text" id="input-role" placeholder="游戏内角色名">
+
+    <div class="form-label">备注 <span class="opt">选填</span></div>
+    <input type="text" id="input-remark" placeholder="其他说明">
+  </div>
+
+  <div class="submit-bar">
+    <div class="total">
+      已选：<b id="selected-price">¥0</b>
+    </div>
+    <button class="btn btn-orange pay-btn" onclick="doOrder()">立即支付</button>
+  </div>
+</div>
+
+<!-- ═══════════ 支付结果页 ═══════════ -->
+<div id="page-result" class="page-inner hidden">
+  <div class="pay-result">
+    <div class="result-icon" id="result-icon">✅</div>
+    <h2 id="result-title">支付成功！</h2>
+    <p id="result-desc">我们将尽快为您充值，请关注公众号消息通知</p>
+    <div class="result-btns">
+      <button class="btn btn-ghost" onclick="showTab('profile')">查看订单</button>
+      <button class="btn btn-orange" onclick="showTab('home')">继续购买</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 个人中心 ═══════════ -->
+<div id="page-profile" class="page-inner hidden">
+  <div class="profile-header">
+    <div class="profile-avatar">😊</div>
+    <div class="profile-info">
+      <h3>微信用户</h3>
+      <p>欢迎使用游戏代充服务</p>
+    </div>
+  </div>
+
+  <div class="profile-menu">
+    <div class="menu-item" onclick="showOrders()">
+      <div class="m-icon">📋</div>
+      <div class="m-text">
+        <strong>我的订单</strong>
+        <span>查看充值记录和状态</span>
+      </div>
+      <div class="m-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="openKefu()">
+      <div class="m-icon">💬</div>
+      <div class="m-text">
+        <strong>联系客服</strong>
+        <span>7×16小时在线服务</span>
+      </div>
+      <div class="m-arrow">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 订单列表页 ═══════════ -->
+<div id="page-orders" class="page-inner hidden">
+  <div id="orders-list" style="padding-top:8px"></div>
+</div>
+
+<script>
+// ════════════════════════════
+//  状态
+// ════════════════════════════
+let currentPage = 'home';
+let pageStack   = [];
+let selectedProductId   = null;
+let selectedProductPrice = 0;
+let currentGameId = null;
+let searchTimer = null;
+
+// ════════════════════════════
+//  初始化
+// ════════════════════════════
+window.onload = () => {
+  loadHome();
+};
+
+// ════════════════════════════
+//  导航
+// ════════════════════════════
+function showTab(tab) {
+  // 隐藏所有页面
+  ['home','game','result','profile','orders'].forEach(p =>
+    document.getElementById('page-'+p).classList.add('hidden')
+  );
+  // 重置底部tab
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+
+  pageStack = [];
+  document.getElementById('back-btn').classList.add('hidden');
+  document.getElementById('bottom-nav').classList.remove('hidden');
+
+  if (tab === 'home') {
+    document.getElementById('page-home').classList.remove('hidden');
+    document.getElementById('tab-home').classList.add('active');
+    document.getElementById('page-title').innerHTML = '<span class="logo">⚡ 极速代充：未成年人禁止充值</span>';
+  } else if (tab === 'profile') {
+    document.getElementById('page-profile').classList.remove('hidden');
+    document.getElementById('tab-profile').classList.add('active');
+    document.getElementById('page-title').textContent = '个人中心';
+  }
+  currentPage = tab;
+}
+
+function showPage(name, title) {
+  pageStack.push(currentPage);
+  ['home','game','result','profile','orders'].forEach(p =>
+    document.getElementById('page-'+p).classList.add('hidden')
+  );
+  document.getElementById('page-'+name).classList.remove('hidden');
+  document.getElementById('page-title').textContent = title || '';
+  document.getElementById('back-btn').classList.remove('hidden');
+  currentPage = name;
+}
+
+function goBack() {
+  const prev = pageStack.pop();
+  if (!prev) { showTab('home'); return; }
+  if (prev === 'home' || prev === 'profile') {
+    showTab(prev);
+  } else {
+    showPage(prev);
+  }
+}
+
+// ════════════════════════════
+//  首页
+// ════════════════════════════
+async function loadHome() {
+  const [catRes, gamesRes] = await Promise.all([
+    api('/api/categories'),
+    api('/api/hot_games'),
+  ]);
+
+  // 渲染分类标签
+  if (catRes.code === 0) {
+    const tabs = document.getElementById('category-tabs');
+    catRes.data.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'cat-tab';
+      el.dataset.id = c.id;
+      el.innerHTML = `${c.icon} ${c.name}`;
+      el.onclick = () => filterCategory(c.id, el);
+      tabs.appendChild(el);
+    });
+  }
+
+  // 渲染热门游戏
+  if (gamesRes.code === 0) {
+    renderGames(gamesRes.data);
+  }
+}
+
+function renderGames(games) {
+  const grid = document.getElementById('games-grid');
+  if (!games.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="e-icon">🎮</div><p>暂无游戏</p></div>';
+    return;
+  }
+  grid.innerHTML = games.map(g => `
+    <div class="game-card" onclick="openGame(${g.id})">
+      <div class="game-card-cover" style="background:linear-gradient(135deg, ${g.cover_color}, #0a0c12);overflow:hidden;position:relative">
+        ${g.icon_url ? '<img src="' + g.icon_url + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">' : '<span style="font-size:36px">' + g.icon + '</span>'}
+      </div>
+      <div class="game-card-body">
+        <div class="game-card-name">${g.name}</div>
+        <div class="game-card-desc">${g.description||'点击充值'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function filterCategory(id, el) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+
+  const title = document.getElementById('games-section-title');
+  const grid  = document.getElementById('games-grid');
+  grid.innerHTML = '<div class="loading">加载中...</div>';
+
+  if (id === 'all') {
+    title.innerHTML = '🔥 热门游戏';
+    const res = await api('/api/hot_games');
+    renderGames(res.data || []);
+    return;
+  }
+
+  // 找到该分类的游戏
+  const res = await api('/api/categories');
+  const cat = res.data.find(c => c.id == id);
+  if (cat) {
+    title.innerHTML = `${cat.icon} ${cat.name}`;
+    renderGames(cat.games || []);
+  }
+}
+
+// ════════════════════════════
+//  搜索
+// ════════════════════════════
+function onSearch(val) {
+  clearTimeout(searchTimer);
+  const results = document.getElementById('search-results');
+  if (!val.trim()) { results.classList.add('hidden'); return; }
+  searchTimer = setTimeout(async () => {
+    const res = await api(`/api/search?q=${encodeURIComponent(val)}`);
+    if (!res.data.length) { results.classList.add('hidden'); return; }
+    results.innerHTML = res.data.map(g => `
+      <div class="search-result-item" onclick="openGame(${g.id}); closeSearch()">
+        <div class="s-icon">${g.icon}</div>
+        <div>
+          <div class="s-name">${g.name}</div>
+          <div class="s-desc">${g.description||''}</div>
+        </div>
+      </div>
+    `).join('');
+    results.classList.remove('hidden');
+  }, 300);
+}
+
+function closeSearch() {
+  document.getElementById('search-results').classList.add('hidden');
+  document.getElementById('search-input').value = '';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeSearch();
+});
+
+// ════════════════════════════
+//  游戏详情
+// ════════════════════════════
+async function openGame(id) {
+  currentGameId = id;
+  selectedProductId = null;
+  selectedProductPrice = 0;
+  document.getElementById('selected-price').textContent = '¥0';
+
+  showPage('game', '选择档位');
+
+  const res = await api(`/api/game/${id}`);
+  if (res.code !== 0) { toast('加载失败'); return; }
+  const g = res.data;
+
+  // 英雄区
+  const hero = document.getElementById('game-hero');
+  hero.style.background = `linear-gradient(135deg, ${g.cover_color}, #0a0c12)`;
+  document.getElementById('game-name').textContent = g.name;
+  document.getElementById('game-desc').textContent = g.description || '';
+  // 清空旧图标，防止重复叠加
+  const oldIcon = hero.querySelector('.game-dynamic-icon');
+  if (oldIcon) oldIcon.remove();
+  // 插入新图标
+  const iconDiv = document.createElement('div');
+  iconDiv.className = 'game-dynamic-icon';
+  iconDiv.innerHTML = g.icon_url ? '<img src="' + g.icon_url + '" style="width:80px;height:80px;object-fit:cover;border-radius:16px;margin-bottom:8px">' : '<div style="font-size:64px">' + g.icon + '</div>';
+  hero.querySelector('.game-hero-info').insertAdjacentElement('beforebegin', iconDiv);
+
+  // 档位列表
+  const list = document.getElementById('products-list');
+  if (!g.products.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">📦</div><p>暂无在售商品</p></div>';
+    return;
+  }
+  list.innerHTML = g.products.map(p => `
+    <div class="product-item" id="product-${p.id}" onclick="selectProduct(${p.id}, ${p.price})">
+      <div>
+        <div class="p-name">${p.name}</div>
+        <div class="p-desc">${p.description||''}</div>
+      </div>
+      <div class="p-price"><span>¥</span>${p.price.toFixed(2)}</div>
+    </div>
+  `).join('');
+
+  // 清空表单
+  ['input-account','input-zone','input-role','input-remark'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function selectProduct(id, price) {
+  document.querySelectorAll('.product-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('product-'+id).classList.add('selected');
+  selectedProductId = id;
+  selectedProductPrice = price;
+  document.getElementById('selected-price').textContent = `¥${price.toFixed(2)}`;
+}
+
+// ════════════════════════════
+//  下单
+// ════════════════════════════
+async function doOrder() {
+  if (!selectedProductId) { toast('请先选择充值档位'); return; }
+  const account = document.getElementById('input-account').value.trim();
+  if (!account) { toast('请填写游戏账号'); return; }
+
+  const body = {
+    product_id:   selectedProductId,
+    game_account: account,
+    game_zone:    document.getElementById('input-zone').value.trim(),
+    game_role:    document.getElementById('input-role').value.trim(),
+    remark:       document.getElementById('input-remark').value.trim(),
+  };
+
+  const res = await api('/pay/create', 'POST', body);
+  if (res.code !== 0) { toast(res.msg || '下单失败'); return; }
+
+  // 调起微信支付
+  if (typeof WeixinJSBridge === 'undefined') {
+    // 非微信环境（测试用）
+    showResult(true, res.order_no);
+    return;
+  }
+
+  WeixinJSBridge.invoke('getBrandWCPayRequest', res.data, result => {
+    if (result.err_msg === 'get_brand_wcpay_request:ok') {
+      showResult(true, res.order_no);
+    } else if (result.err_msg === 'get_brand_wcpay_request:cancel') {
+      toast('已取消支付');
+    } else {
+      toast('支付失败，请重试');
+    }
+  });
+}
+
+function showResult(success, orderNo) {
+  showPage('result', '');
+  document.getElementById('bottom-nav').classList.add('hidden');
+  if (success) {
+    document.getElementById('result-icon').textContent  = '✅';
+    document.getElementById('result-title').textContent = '支付成功！';
+    document.getElementById('result-desc').textContent  = `订单号：${orderNo}\n我们将尽快为您充值，请关注公众号消息通知`;
+  } else {
+    document.getElementById('result-icon').textContent  = '❌';
+    document.getElementById('result-title').textContent = '支付失败';
+    document.getElementById('result-desc').textContent  = '请返回重试';
+  }
+}
+
+// ════════════════════════════
+//  个人中心
+// ════════════════════════════
+function showOrders() {
+  showPage('orders', '我的订单');
+  loadOrders();
+}
+
+async function loadOrders() {
+  const list = document.getElementById('orders-list');
+  list.innerHTML = '<div class="loading">加载中...</div>';
+  const res = await api('/api/my_orders');
+  if (res.code === 401) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">🔐</div><p>请先关注公众号后使用</p></div>';
+    return;
+  }
+  if (!res.data || !res.data.length) {
+    list.innerHTML = '<div class="empty"><div class="e-icon">📋</div><p>暂无订单记录</p></div>';
+    return;
+  }
+  const statusText = ['待处理','处理中','已完成','已退款'];
+  list.innerHTML = res.data.map(o => `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="o-game">${o.game_name}</div>
+        <div class="o-status status-${o.order_status}">${statusText[o.order_status]||'-'}</div>
+      </div>
+      <div class="o-product">${o.product_name}</div>
+      <div class="o-meta">
+        <div>${o.created_at}</div>
+        <div class="o-price">¥${o.amount}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openKefu() {
+  // 跳转公众号客服，替换成你的公众号链接
+  window.location.href = 'weixin://';
+  toast('正在打开客服...');
+}
+
+// ════════════════════════════
+//  工具
+// ════════════════════════════
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+async function api(url, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'}, credentials: 'same-origin' };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const res = await fetch(url, opts);
+    return await res.json();
+  } catch(e) {
+    return { code: -1, msg: '网络错误' };
+  }
+}
+</script>
+</body>
+</html>

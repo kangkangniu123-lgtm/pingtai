@@ -1,0 +1,10 @@
+[2026-04-20 12:50:16 +0000] [15566] [INFO] Starting gunicorn 22.0.0
+[2026-04-20 12:50:16 +0000] [15566] [INFO] Listening at: http://0.0.0.0:5000 (15566)
+[2026-04-20 12:50:16 +0000] [15566] [INFO] Using worker: sync
+[2026-04-20 12:50:16 +0000] [15567] [INFO] Booting worker with pid: 15567
+[2026-04-20 12:50:16 +0000] [15568] [INFO] Booting worker with pid: 15568
+[2026-04-20 12:51:55 +0000] [15567] [INFO] Worker exiting (pid: 15567)
+[2026-04-20 12:51:55 +0000] [15566] [INFO] Handling signal: term
+[2026-04-20 12:51:55 +0000] [15568] [INFO] Worker exiting (pid: 15568)
+[2026-04-20 12:51:55 +0000] [15566] [ERROR] Worker (pid:15567) was sent SIGTERM!
+[2026-04-20 12:51:56 +0000] [15566] [INFO] Shutting down: Master
